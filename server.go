@@ -28,7 +28,9 @@ func main() {
 		PlayerChannels: make(map[string]chan *model.Message),
 		WinnerNumber:   random_generator.GenerateRandomNumber(),
 
-		CurrentPrize:    internal.StartingPrize,
+		CurrentPrize: internal.StartingPrize,
+
+		LastWinnerCheck: time.Now(),
 		NextWinnerCheck: time.Now().Add(time.Minute * internal.TryMinute),
 	}
 
@@ -40,6 +42,23 @@ func main() {
 	r.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:8080/ for GraphQL playground")
+
+	tickerChan := time.Tick(time.Minute * internal.TryMinute)
+
+	go func(g *game.Game) {
+		for next := range tickerChan {
+			g.Mu.Lock()
+
+			g.LastWinnerCheck = next
+			g.NextWinnerCheck = next.Add(time.Minute * internal.TryMinute)
+			g.CurrentPrize *= 2
+
+			g.Mu.Unlock()
+
+			g.PrizeDoubled()
+		}
+	}(g)
+
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		for _, c := range g.PlayerChannels {
 			close(c)

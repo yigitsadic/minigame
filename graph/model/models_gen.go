@@ -9,15 +9,19 @@ import (
 )
 
 type GameSession struct {
-	ID           string `json:"id"`
-	CurrentPrize int    `json:"currentPrize"`
-	CreatedAt    string `json:"createdAt"`
+	ID              string `json:"id"`
+	CurrentPrize    int    `json:"currentPrize"`
+	NextWinnerCheck string `json:"nextWinnerCheck"`
+	LastWinnerCheck string `json:"lastWinnerCheck"`
+	CreatedAt       string `json:"createdAt"`
 }
 
 type Message struct {
-	ID          string      `json:"id"`
-	Text        string      `json:"text"`
-	MessageType MessageType `json:"messageType"`
+	ID            string      `json:"id"`
+	Text          string      `json:"text"`
+	MessageType   MessageType `json:"messageType"`
+	ClaimedNumber *int        `json:"claimedNumber"`
+	PrizeWon      *int        `json:"prizeWon"`
 }
 
 type MessageType string
@@ -27,6 +31,7 @@ const (
 	MessageTypeUserJoined  MessageType = "USER_JOINED"
 	MessageTypeWinnerFound MessageType = "WINNER_FOUND"
 	MessageTypeDoublePrize MessageType = "DOUBLE_PRIZE"
+	MessageTypeGameEnded   MessageType = "GAME_ENDED"
 )
 
 var AllMessageType = []MessageType{
@@ -34,11 +39,12 @@ var AllMessageType = []MessageType{
 	MessageTypeUserJoined,
 	MessageTypeWinnerFound,
 	MessageTypeDoublePrize,
+	MessageTypeGameEnded,
 }
 
 func (e MessageType) IsValid() bool {
 	switch e {
-	case MessageTypeInitial, MessageTypeUserJoined, MessageTypeWinnerFound, MessageTypeDoublePrize:
+	case MessageTypeInitial, MessageTypeUserJoined, MessageTypeWinnerFound, MessageTypeDoublePrize, MessageTypeGameEnded:
 		return true
 	}
 	return false

@@ -2,12 +2,17 @@ type Message {
   id: ID!
   text: String!
   messageType: MessageType!
+
+  claimedNumber: Int
+  prizeWon: Int
 }
 
 type GameSession {
   id: ID!
   currentPrize: Int!
-  NextWinnerCheck: String!
+
+  nextWinnerCheck: String!
+  lastWinnerCheck: String!
   createdAt: String!
 }
 
@@ -16,16 +21,13 @@ enum MessageType {
   USER_JOINED
   WINNER_FOUND
   DOUBLE_PRIZE
+  GAME_ENDED
 }
 
 type Query {
   gameSession: GameSession!
 }
 
-type Mutation {
-  publishMessage(message: String!): Boolean
-}
-
 type Subscription {
-  messageFeed(gameId: String!, identifier: ID!): Message
+  joinGame(gameId: String!, identifier: ID!): Message
 }
