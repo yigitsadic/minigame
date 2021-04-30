@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-type GameSession struct {
+type Game struct {
 	ID              string `json:"id"`
 	CurrentPrize    int    `json:"currentPrize"`
 	NextWinnerCheck string `json:"nextWinnerCheck"`

@@ -7,7 +7,7 @@ type Message {
   prizeWon: Int
 }
 
-type GameSession {
+type Game {
   id: ID!
   currentPrize: Int!
 
@@ -25,7 +25,7 @@ enum MessageType {
 }
 
 type Query {
-  gameSession: GameSession!
+  currentGame: Game!
 }
 
 type Subscription {

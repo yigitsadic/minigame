@@ -44,7 +44,7 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	GameSession struct {
+	Game struct {
 		CreatedAt       func(childComplexity int) int
 		CurrentPrize    func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -61,7 +61,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GameSession func(childComplexity int) int
+		CurrentGame func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -70,7 +70,7 @@ type ComplexityRoot struct {
 }
 
 type QueryResolver interface {
-	GameSession(ctx context.Context) (*model.GameSession, error)
+	CurrentGame(ctx context.Context) (*model.Game, error)
 }
 type SubscriptionResolver interface {
 	JoinGame(ctx context.Context, gameID string, identifier string) (<-chan *model.Message, error)
@@ -91,40 +91,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "GameSession.createdAt":
-		if e.complexity.GameSession.CreatedAt == nil {
+	case "Game.createdAt":
+		if e.complexity.Game.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.GameSession.CreatedAt(childComplexity), true
+		return e.complexity.Game.CreatedAt(childComplexity), true
 
-	case "GameSession.currentPrize":
-		if e.complexity.GameSession.CurrentPrize == nil {
+	case "Game.currentPrize":
+		if e.complexity.Game.CurrentPrize == nil {
 			break
 		}
 
-		return e.complexity.GameSession.CurrentPrize(childComplexity), true
+		return e.complexity.Game.CurrentPrize(childComplexity), true
 
-	case "GameSession.id":
-		if e.complexity.GameSession.ID == nil {
+	case "Game.id":
+		if e.complexity.Game.ID == nil {
 			break
 		}
 
-		return e.complexity.GameSession.ID(childComplexity), true
+		return e.complexity.Game.ID(childComplexity), true
 
-	case "GameSession.lastWinnerCheck":
-		if e.complexity.GameSession.LastWinnerCheck == nil {
+	case "Game.lastWinnerCheck":
+		if e.complexity.Game.LastWinnerCheck == nil {
 			break
 		}
 
-		return e.complexity.GameSession.LastWinnerCheck(childComplexity), true
+		return e.complexity.Game.LastWinnerCheck(childComplexity), true
 
-	case "GameSession.nextWinnerCheck":
-		if e.complexity.GameSession.NextWinnerCheck == nil {
+	case "Game.nextWinnerCheck":
+		if e.complexity.Game.NextWinnerCheck == nil {
 			break
 		}
 
-		return e.complexity.GameSession.NextWinnerCheck(childComplexity), true
+		return e.complexity.Game.NextWinnerCheck(childComplexity), true
 
 	case "Message.claimedNumber":
 		if e.complexity.Message.ClaimedNumber == nil {
@@ -161,12 +161,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.Text(childComplexity), true
 
-	case "Query.gameSession":
-		if e.complexity.Query.GameSession == nil {
+	case "Query.currentGame":
+		if e.complexity.Query.CurrentGame == nil {
 			break
 		}
 
-		return e.complexity.Query.GameSession(childComplexity), true
+		return e.complexity.Query.CurrentGame(childComplexity), true
 
 	case "Subscription.joinGame":
 		if e.complexity.Subscription.JoinGame == nil {
@@ -256,7 +256,7 @@ var sources = []*ast.Source{
   prizeWon: Int
 }
 
-type GameSession {
+type Game {
   id: ID!
   currentPrize: Int!
 
@@ -274,7 +274,7 @@ enum MessageType {
 }
 
 type Query {
-  gameSession: GameSession!
+  currentGame: Game!
 }
 
 type Subscription {
@@ -365,7 +365,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _GameSession_id(ctx context.Context, field graphql.CollectedField, obj *model.GameSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _Game_id(ctx context.Context, field graphql.CollectedField, obj *model.Game) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -373,7 +373,7 @@ func (ec *executionContext) _GameSession_id(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "GameSession",
+		Object:     "Game",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -400,7 +400,7 @@ func (ec *executionContext) _GameSession_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GameSession_currentPrize(ctx context.Context, field graphql.CollectedField, obj *model.GameSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _Game_currentPrize(ctx context.Context, field graphql.CollectedField, obj *model.Game) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -408,7 +408,7 @@ func (ec *executionContext) _GameSession_currentPrize(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "GameSession",
+		Object:     "Game",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -435,7 +435,7 @@ func (ec *executionContext) _GameSession_currentPrize(ctx context.Context, field
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GameSession_nextWinnerCheck(ctx context.Context, field graphql.CollectedField, obj *model.GameSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _Game_nextWinnerCheck(ctx context.Context, field graphql.CollectedField, obj *model.Game) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -443,7 +443,7 @@ func (ec *executionContext) _GameSession_nextWinnerCheck(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "GameSession",
+		Object:     "Game",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -470,7 +470,7 @@ func (ec *executionContext) _GameSession_nextWinnerCheck(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GameSession_lastWinnerCheck(ctx context.Context, field graphql.CollectedField, obj *model.GameSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _Game_lastWinnerCheck(ctx context.Context, field graphql.CollectedField, obj *model.Game) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -478,7 +478,7 @@ func (ec *executionContext) _GameSession_lastWinnerCheck(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "GameSession",
+		Object:     "Game",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -505,7 +505,7 @@ func (ec *executionContext) _GameSession_lastWinnerCheck(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _GameSession_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.GameSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _Game_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Game) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -513,7 +513,7 @@ func (ec *executionContext) _GameSession_createdAt(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "GameSession",
+		Object:     "Game",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -709,7 +709,7 @@ func (ec *executionContext) _Message_prizeWon(ctx context.Context, field graphql
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_gameSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_currentGame(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -727,7 +727,7 @@ func (ec *executionContext) _Query_gameSession(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GameSession(rctx)
+		return ec.resolvers.Query().CurrentGame(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -739,9 +739,9 @@ func (ec *executionContext) _Query_gameSession(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.GameSession)
+	res := resTmp.(*model.Game)
 	fc.Result = res
-	return ec.marshalNGameSession2ᚖgithubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGameSession(ctx, field.Selections, res)
+	return ec.marshalNGame2ᚖgithubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGame(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1959,39 +1959,39 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
-var gameSessionImplementors = []string{"GameSession"}
+var gameImplementors = []string{"Game"}
 
-func (ec *executionContext) _GameSession(ctx context.Context, sel ast.SelectionSet, obj *model.GameSession) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, gameSessionImplementors)
+func (ec *executionContext) _Game(ctx context.Context, sel ast.SelectionSet, obj *model.Game) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, gameImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("GameSession")
+			out.Values[i] = graphql.MarshalString("Game")
 		case "id":
-			out.Values[i] = ec._GameSession_id(ctx, field, obj)
+			out.Values[i] = ec._Game_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "currentPrize":
-			out.Values[i] = ec._GameSession_currentPrize(ctx, field, obj)
+			out.Values[i] = ec._Game_currentPrize(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "nextWinnerCheck":
-			out.Values[i] = ec._GameSession_nextWinnerCheck(ctx, field, obj)
+			out.Values[i] = ec._Game_nextWinnerCheck(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "lastWinnerCheck":
-			out.Values[i] = ec._GameSession_lastWinnerCheck(ctx, field, obj)
+			out.Values[i] = ec._Game_lastWinnerCheck(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "createdAt":
-			out.Values[i] = ec._GameSession_createdAt(ctx, field, obj)
+			out.Values[i] = ec._Game_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2062,7 +2062,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "gameSession":
+		case "currentGame":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2070,7 +2070,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_gameSession(ctx, field)
+				res = ec._Query_currentGame(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2371,18 +2371,18 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNGameSession2githubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGameSession(ctx context.Context, sel ast.SelectionSet, v model.GameSession) graphql.Marshaler {
-	return ec._GameSession(ctx, sel, &v)
+func (ec *executionContext) marshalNGame2githubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGame(ctx context.Context, sel ast.SelectionSet, v model.Game) graphql.Marshaler {
+	return ec._Game(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNGameSession2ᚖgithubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGameSession(ctx context.Context, sel ast.SelectionSet, v *model.GameSession) graphql.Marshaler {
+func (ec *executionContext) marshalNGame2ᚖgithubᚗcomᚋyigitsadicᚋminigameᚋgraphᚋmodelᚐGame(ctx context.Context, sel ast.SelectionSet, v *model.Game) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._GameSession(ctx, sel, v)
+	return ec._Game(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {

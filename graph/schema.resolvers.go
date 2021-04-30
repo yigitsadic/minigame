@@ -11,8 +11,8 @@ import (
 	"github.com/yigitsadic/minigame/graph/model"
 )
 
-func (r *queryResolver) GameSession(ctx context.Context) (*model.GameSession, error) {
-	return &model.GameSession{
+func (r *queryResolver) CurrentGame(ctx context.Context) (*model.Game, error) {
+	return &model.Game{
 		ID:           r.Game.Id,
 		CurrentPrize: r.Game.CurrentPrize,
 		CreatedAt:    r.Game.CreatedAt.Format(time.RFC3339),

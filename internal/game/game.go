@@ -7,6 +7,7 @@ import (
 	"github.com/yigitsadic/minigame/graph/model"
 	"github.com/yigitsadic/minigame/internal"
 	"github.com/yigitsadic/minigame/internal/random_generator"
+	"log"
 	"sync"
 	"time"
 )
@@ -21,21 +22,37 @@ type Game struct {
 	Id        string
 	CreatedAt time.Time
 
-	Players        map[string]int
-	PlayerChannels map[string]chan *model.Message
-	WinnerNumber   int
+	Players      map[string]*Player
+	WinnerNumber int
 
+	CurrentStep  int
 	CurrentPrize int
 
 	LastWinnerCheck time.Time
 	NextWinnerCheck time.Time
 
-	Mu sync.Mutex
+	Mu         sync.Mutex
+	TickerChan <-chan time.Time
+}
+
+func NewGame() *Game {
+	return &Game{
+		Id:           uuid.NewString(),
+		CreatedAt:    time.Now(),
+		Players:      make(map[string]*Player),
+		WinnerNumber: random_generator.GenerateRandomNumber(),
+
+		CurrentPrize: internal.StartingPrize,
+
+		LastWinnerCheck: time.Now(),
+		NextWinnerCheck: time.Now().Add(time.Minute * internal.TryMinute),
+		TickerChan:      time.Tick(time.Minute * internal.TryMinute),
+	}
 }
 
 func (g *Game) PrizeDoubled() {
-	for _, c := range g.PlayerChannels {
-		c <- &model.Message{
+	for _, p := range g.Players {
+		p.MessageChan <- &model.Message{
 			ID:          uuid.NewString(),
 			Text:        "Prize is doubled. Wish you luck.",
 			MessageType: model.MessageTypeDoublePrize,
@@ -53,27 +70,82 @@ func (g *Game) JoinPlayer(gameId, identifier string) (chan *model.Message, error
 	}
 
 	g.Mu.Lock()
-	g.Players[identifier] = random_generator.GenerateRandomNumber()
-	g.PlayerChannels[identifier] = make(chan *model.Message)
+
+	p := &Player{
+		Identifier:    identifier,
+		ClaimedNumber: random_generator.GenerateRandomNumber(),
+		MessageChan:   make(chan *model.Message),
+	}
+
+	g.Players[identifier] = p
 	g.Mu.Unlock()
 
-	return g.PlayerChannels[identifier], nil
+	return p.MessageChan, nil
 }
 
 func (g *Game) PublishClaimedNumber(identifier string) error {
-	c, ok1 := g.PlayerChannels[identifier]
-	n, ok2 := g.Players[identifier]
+	p, ok := g.Players[identifier]
 
-	if ok1 && ok2 {
-		c <- &model.Message{
+	if ok {
+		p.MessageChan <- &model.Message{
 			ID:            uuid.NewString(),
-			Text:          fmt.Sprintf("Your number is %d. You will notified if you win.", n),
+			Text:          fmt.Sprintf("Your number is %d. You will notified if you win.", p.ClaimedNumber),
 			MessageType:   model.MessageTypeInitial,
-			ClaimedNumber: &n,
+			ClaimedNumber: &p.ClaimedNumber,
 		}
 
 		return nil
 	} else {
 		return InvalidPlayerIdentifierError
+	}
+}
+
+func (g *Game) HandleGameTicker() {
+	for t := range g.TickerChan {
+		if g.CurrentStep >= internal.TryCount {
+			log.Println("Game stopped.")
+			break
+		}
+
+		g.CurrentStep++
+
+		g.Mu.Lock()
+
+		if p := g.WinningPlayer(); p != nil {
+			log.Println("Winner found")
+		}
+
+		g.LastWinnerCheck = t
+		g.NextWinnerCheck = t.Add(time.Minute * internal.TryMinute)
+		g.CurrentPrize *= 2
+
+		g.Mu.Unlock()
+
+		g.PrizeDoubled()
+	}
+}
+
+func (g *Game) WinningPlayer() *string {
+	for k, p := range g.Players {
+		if g.WinnerNumber == p.ClaimedNumber {
+
+			return &k
+		}
+	}
+
+	return nil
+}
+
+func (g *Game) PublishToWinner() {
+	panic("implement me")
+}
+
+func (g *Game) PublishToLosers() {
+	panic("implement me")
+}
+
+func (g *Game) CloseAllChannels() {
+	for _, p := range g.Players {
+		close(p.MessageChan)
 	}
 }
