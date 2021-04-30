@@ -1,0 +1,31 @@
+type Message {
+  id: ID!
+  text: String!
+  messageType: MessageType!
+}
+
+type GameSession {
+  id: ID!
+  currentPrize: Int!
+  NextWinnerCheck: String!
+  createdAt: String!
+}
+
+enum MessageType {
+  INITIAL
+  USER_JOINED
+  WINNER_FOUND
+  DOUBLE_PRIZE
+}
+
+type Query {
+  gameSession: GameSession!
+}
+
+type Mutation {
+  publishMessage(message: String!): Boolean
+}
+
+type Subscription {
+  messageFeed(gameId: String!, identifier: ID!): Message
+}
