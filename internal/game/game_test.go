@@ -124,3 +124,39 @@ func TestGame_JoinPlayer(t *testing.T) {
 		}
 	})
 }
+
+func TestGame_WinningPlayer(t *testing.T) {
+	t.Run("it should return winner if exists", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+
+		p := NewPlayer("ABC")
+		g.Players[p.Identifier] = p
+
+		p.ClaimedNumber = g.WinnerNumber
+
+		got := g.WinningPlayer()
+
+		if got != p {
+			a.Errorf("expected winner was player but got=%v", got)
+		}
+	})
+
+	t.Run("it should return nil if no winner found", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+
+		p := NewPlayer("ABC")
+		g.Players[p.Identifier] = p
+
+		p.ClaimedNumber = g.WinnerNumber + 1
+
+		got := g.WinningPlayer()
+
+		if got != nil {
+			a.Errorf("expected no winner but got=%v", got)
+		}
+	})
+}

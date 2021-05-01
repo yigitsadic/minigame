@@ -133,11 +133,14 @@ func (g *Game) HandleGameTicker() {
 	}
 }
 
-func (g *Game) WinningPlayer() *string {
-	for k, p := range g.Players {
-		if g.WinnerNumber == p.ClaimedNumber {
+// Returns winning player if exists.
+func (g *Game) WinningPlayer() *Player {
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
 
-			return &k
+	for _, p := range g.Players {
+		if g.WinnerNumber == p.ClaimedNumber {
+			return p
 		}
 	}
 
