@@ -9,44 +9,79 @@ import (
 )
 
 func TestGame_PrizeDoubled(t *testing.T) {
-	p1 := NewPlayer("ABCD1")
-	p2 := NewPlayer("ABCD2")
+	t.Run("it should publish prize doubled message gracefully", func(c *testing.T) {
+		c.Parallel()
 
-	// Use buffered channel.
-	p1C := make(chan *model.Message, 1)
-	p2C := make(chan *model.Message, 1)
+		p1 := NewPlayer("ABCD1")
+		p2 := NewPlayer("ABCD2")
 
-	p1.MessageChan = p1C
-	p2.MessageChan = p2C
+		// Use buffered channel.
+		p1C := make(chan *model.Message, 1)
+		p2C := make(chan *model.Message, 1)
 
-	g := NewGame()
+		p1.MessageChan = p1C
+		p2.MessageChan = p2C
 
-	g.Players[p1.Identifier] = p1
-	g.Players[p2.Identifier] = p2
+		g := NewGame()
 
-	var a *model.Message
-	var b *model.Message
+		g.Players[p1.Identifier] = p1
+		g.Players[p2.Identifier] = p2
 
-	g.PrizeDoubled()
+		var a *model.Message
+		var b *model.Message
 
-	a = <-p1.MessageChan
-	b = <-p2.MessageChan
+		g.PrizeDoubled()
 
-	if a == nil {
-		t.Errorf("expected to get a message from p1 message channel")
-	}
+		a = <-p1.MessageChan
+		b = <-p2.MessageChan
 
-	if b == nil {
-		t.Errorf("expected to get a message from p2 message channel")
-	}
+		if a == nil {
+			c.Errorf("expected to get a message from p1 message channel")
+		}
 
-	if a != nil && a.Text != PrizeDoubledMessage {
-		t.Errorf("expected message was %q got=%q", PrizeDoubledMessage, a.Text)
-	}
+		if b == nil {
+			c.Errorf("expected to get a message from p2 message channel")
+		}
 
-	if b != nil && b.Text != PrizeDoubledMessage {
-		t.Errorf("expected message was %q got=%q", PrizeDoubledMessage, b.Text)
-	}
+		if a != nil && a.Text != PrizeDoubledMessage {
+			c.Errorf("expected message was %q got=%q", PrizeDoubledMessage, a.Text)
+		}
+
+		if b != nil && b.Text != PrizeDoubledMessage {
+			c.Errorf("expected message was %q got=%q", PrizeDoubledMessage, b.Text)
+		}
+	})
+
+	t.Run("it should handle closed channel gracefully", func(c *testing.T) {
+		c.Parallel()
+
+		g := NewGame()
+
+		p := NewPlayer("ABC")
+		p2 := NewPlayer("DEF")
+
+		closedChan, err := g.JoinPlayer(p.Identifier)
+		if err != nil {
+			c.Errorf("unexpected to get an error %s", err)
+		}
+
+		// buffered chan
+		p2.MessageChan = make(chan *model.Message, 1)
+		openChan, err := g.JoinPlayer(p2.Identifier)
+		if err != nil {
+			c.Errorf("unexpected to get an error %s", err)
+		}
+
+		close(closedChan)
+
+		g.PrizeDoubled()
+
+		msg := <-openChan
+
+		if msg.Text != PrizeDoubledMessage {
+			c.Errorf("expected chan message was=%s, but got=%s", PrizeDoubledMessage, msg.Text)
+		}
+	})
 }
 
 func TestGame_JoinPlayer(t *testing.T) {

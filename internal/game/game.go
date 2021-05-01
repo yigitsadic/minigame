@@ -58,6 +58,10 @@ func NewGame() *Game {
 func (g *Game) PrizeDoubled() {
 	for _, player := range g.Players {
 		go func(p *Player) {
+			defer func() {
+				recover()
+			}()
+
 			p.MessageChan <- &model.Message{
 				ID:          uuid.NewString(),
 				Text:        PrizeDoubledMessage,
