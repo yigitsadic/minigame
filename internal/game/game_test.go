@@ -2,8 +2,8 @@ package game
 
 import (
 	"fmt"
-	"github.com/yigitsadic/minigame/graph/model"
 	"github.com/yigitsadic/minigame/internal"
+	"github.com/yigitsadic/minigame/internal/model"
 	"reflect"
 	"testing"
 )

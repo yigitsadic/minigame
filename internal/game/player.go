@@ -1,7 +1,7 @@
 package game
 
 import (
-	"github.com/yigitsadic/minigame/graph/model"
+	"github.com/yigitsadic/minigame/internal/model"
 	"github.com/yigitsadic/minigame/internal/random_generator"
 )
 
