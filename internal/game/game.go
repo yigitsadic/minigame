@@ -13,9 +13,12 @@ import (
 )
 
 var (
-	InvalidGameError             = errors.New("invalid game")
 	UserLimitReachedError        = errors.New("maximum user limit reached")
 	InvalidPlayerIdentifierError = errors.New("invalid player identifier")
+)
+
+const (
+	PrizeDoubledMessage = "Prize is doubled. Wish you luck."
 )
 
 type Game struct {
@@ -50,21 +53,20 @@ func NewGame() *Game {
 	}
 }
 
+// Sends a message to all participants that prize is doubled.
 func (g *Game) PrizeDoubled() {
-	for _, p := range g.Players {
-		p.MessageChan <- &model.Message{
-			ID:          uuid.NewString(),
-			Text:        "Prize is doubled. Wish you luck.",
-			MessageType: model.MessageTypeDoublePrize,
-		}
+	for _, player := range g.Players {
+		go func(p *Player) {
+			p.MessageChan <- &model.Message{
+				ID:          uuid.NewString(),
+				Text:        PrizeDoubledMessage,
+				MessageType: model.MessageTypeDoublePrize,
+			}
+		}(player)
 	}
 }
 
-func (g *Game) JoinPlayer(gameId, identifier string) (chan *model.Message, error) {
-	if gameId != g.Id {
-		return nil, InvalidGameError
-	}
-
+func (g *Game) JoinPlayer(identifier string) (chan *model.Message, error) {
 	if len(g.Players) >= internal.PlayerLimit {
 		return nil, UserLimitReachedError
 	}
