@@ -23,7 +23,7 @@ func (r *queryResolver) CurrentGame(ctx context.Context) (*model.Game, error) {
 }
 
 func (r *subscriptionResolver) JoinGame(ctx context.Context, gameID string, identifier string) (<-chan *model.Message, error) {
-	c, err := r.Game.JoinPlayer(gameID, identifier)
+	c, err := r.Game.JoinPlayer(identifier)
 	if err != nil {
 		return nil, err
 	}
