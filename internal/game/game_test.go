@@ -198,3 +198,62 @@ func TestGame_CloseAllChannels(t *testing.T) {
 		g.CloseAllChannels()
 	})
 }
+
+func TestGame_PublishToWinner(t *testing.T) {
+	t.Run("it should publish message to winner", func(a *testing.T) {
+		a.Parallel()
+
+		prize := 50
+
+		g := NewGame()
+		g.CurrentPrize = prize
+
+		p := NewPlayer("ABC")
+		g.Winner = p
+
+		// buffered channel override
+		c := make(chan *model.Message, 1)
+		p.MessageChan = c
+
+		g.PublishToWinner()
+
+		got := <-c
+
+		// Message type should match.
+		if got.MessageType != model.MessageTypeYouWin {
+			a.Errorf("expected to get you win message but got %s", got.MessageType)
+		}
+
+		// Message content should match.
+		if got.Text != YouWinMessage {
+			a.Errorf("expected to get you win message but got=%s", got.Text)
+		}
+
+		// Should give correct prize
+		if got.PrizeWon != nil && *got.PrizeWon != prize {
+			a.Errorf("expected prize won was %d but got %d", prize, got.PrizeWon)
+		}
+	})
+
+	t.Run("it should handle if no winner present", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+
+		g.PublishToWinner()
+	})
+
+	t.Run("it should handle gracefully if winner's chan closed", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+
+		p := NewPlayer("AC/DC")
+
+		g.Winner = p
+
+		close(p.MessageChan)
+
+		g.PublishToWinner()
+	})
+}

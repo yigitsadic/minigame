@@ -13,7 +13,7 @@ type MessageType string
 const (
 	MessageTypeInitial     MessageType = "INITIAL"
 	MessageTypeUserJoined  MessageType = "USER_JOINED"
-	MessageTypeWinnerFound MessageType = "WINNER_FOUND"
+	MessageTypeYouWin      MessageType = "YOU_WIN"
 	MessageTypeDoublePrize MessageType = "DOUBLE_PRIZE"
 	MessageTypeGameEnded   MessageType = "GAME_ENDED"
 )

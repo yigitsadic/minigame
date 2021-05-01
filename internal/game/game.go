@@ -19,6 +19,7 @@ var (
 
 const (
 	PrizeDoubledMessage = "Prize is doubled. Wish you luck."
+	YouWinMessage       = "You have won this game. You are a lucky guy/girl!"
 )
 
 type Game struct {
@@ -27,6 +28,7 @@ type Game struct {
 
 	Players      map[string]*Player
 	WinnerNumber int
+	Winner       *Player
 
 	CurrentStep  int
 	CurrentPrize int
@@ -142,7 +144,24 @@ func (g *Game) WinningPlayer() *Player {
 }
 
 func (g *Game) PublishToWinner() {
-	panic("implement me")
+	if g.Winner == nil {
+		return
+	}
+
+	message := &model.Message{
+		ID:          uuid.NewString(),
+		Text:        YouWinMessage,
+		MessageType: model.MessageTypeYouWin,
+		PrizeWon:    &g.CurrentPrize,
+	}
+
+	go func(m *model.Message) {
+		defer func() {
+			recover()
+		}()
+
+		g.Winner.MessageChan <- m
+	}(message)
 }
 
 func (g *Game) PublishToLosers() {
