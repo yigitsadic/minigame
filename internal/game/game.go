@@ -143,6 +143,7 @@ func (g *Game) WinningPlayer() *Player {
 	return nil
 }
 
+// Publishes you win message to winner reading Game.Winner.
 func (g *Game) PublishToWinner() {
 	if g.Winner == nil {
 		return
