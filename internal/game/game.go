@@ -38,6 +38,7 @@ type Game struct {
 	TickerChan <-chan time.Time
 }
 
+// Initializes a new game with default options.
 func NewGame() *Game {
 	return &Game{
 		Id:           uuid.NewString(),
@@ -66,6 +67,7 @@ func (g *Game) PrizeDoubled() {
 	}
 }
 
+// Joins a player with given identifier if there is a room for him/her.
 func (g *Game) JoinPlayer(identifier string) (chan *model.Message, error) {
 	if len(g.Players) >= internal.PlayerLimit {
 		return nil, UserLimitReachedError

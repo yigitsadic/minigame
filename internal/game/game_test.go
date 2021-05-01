@@ -1,7 +1,10 @@
 package game
 
 import (
+	"fmt"
 	"github.com/yigitsadic/minigame/graph/model"
+	"github.com/yigitsadic/minigame/internal"
+	"reflect"
 	"testing"
 )
 
@@ -44,4 +47,45 @@ func TestGame_PrizeDoubled(t *testing.T) {
 	if b != nil && b.Text != PrizeDoubledMessage {
 		t.Errorf("expected message was %q got=%q", PrizeDoubledMessage, b.Text)
 	}
+}
+
+func TestGame_JoinPlayer(t *testing.T) {
+	t.Run("should give an error if room is full", func(a *testing.T) {
+		g := NewGame()
+
+		for x := 1; x <= internal.PlayerLimit; x++ {
+			p := NewPlayer(fmt.Sprintf("Player %d", x))
+			g.Players[p.Identifier] = p
+		}
+
+		if len(g.Players) != internal.PlayerLimit {
+			a.Errorf("expected player count was %d, but got=%d", internal.PlayerLimit, len(g.Players))
+		}
+
+		_, err := g.JoinPlayer("Unlucky Player")
+		if err == nil {
+			a.Errorf("expected to get an error, but got nothing")
+		}
+
+		if err != UserLimitReachedError {
+			a.Errorf("expected error was %s but got %s", UserLimitReachedError, err)
+		}
+
+		a.Parallel()
+	})
+
+	t.Run("should join player to room", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+
+		got, err := g.JoinPlayer("Lucky Player")
+		if err != nil {
+			a.Errorf("unexpected to get an error but got=%s", err)
+		}
+
+		if reflect.TypeOf(got).String() != "chan *model.Message" {
+			a.Errorf("unexpected return type. expected to get %s", reflect.TypeOf(got))
+		}
+	})
 }
