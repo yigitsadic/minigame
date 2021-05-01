@@ -60,14 +60,14 @@ func TestGame_PrizeDoubled(t *testing.T) {
 		p := NewPlayer("ABC")
 		p2 := NewPlayer("DEF")
 
-		closedChan, err := g.JoinPlayer(p.Identifier)
+		closedChan, err := g.JoinPlayer(p)
 		if err != nil {
 			c.Errorf("unexpected to get an error %s", err)
 		}
 
 		// buffered chan
 		p2.MessageChan = make(chan *model.Message, 1)
-		openChan, err := g.JoinPlayer(p2.Identifier)
+		openChan, err := g.JoinPlayer(p2)
 		if err != nil {
 			c.Errorf("unexpected to get an error %s", err)
 		}
@@ -97,7 +97,7 @@ func TestGame_JoinPlayer(t *testing.T) {
 			a.Errorf("expected player count was %d, but got=%d", internal.PlayerLimit, len(g.Players))
 		}
 
-		_, err := g.JoinPlayer("Unlucky Player")
+		_, err := g.JoinPlayer(NewPlayer("Unlucky Player"))
 		if err == nil {
 			a.Errorf("expected to get an error, but got nothing")
 		}
@@ -114,7 +114,7 @@ func TestGame_JoinPlayer(t *testing.T) {
 
 		g := NewGame()
 
-		got, err := g.JoinPlayer("Lucky Player")
+		got, err := g.JoinPlayer(NewPlayer("Lucky Player"))
 		if err != nil {
 			a.Errorf("unexpected to get an error but got=%s", err)
 		}
@@ -158,5 +158,25 @@ func TestGame_WinningPlayer(t *testing.T) {
 		if got != nil {
 			a.Errorf("expected no winner but got=%v", got)
 		}
+	})
+}
+
+func TestGame_CloseAllChannels(t *testing.T) {
+	t.Run("it should close all channels gracefully", func(a *testing.T) {
+		g := NewGame()
+
+		for x := 1; x <= 10; x++ {
+			p := NewPlayer("ABCD")
+
+			if _, err := g.JoinPlayer(p); err != nil {
+				a.Errorf("unexpected to get an error while joining player, error=%s", err)
+			}
+		}
+
+		a.Parallel()
+	})
+
+	t.Run("it should close channels even some of them closed", func(a *testing.T) {
+		a.Parallel()
 	})
 }

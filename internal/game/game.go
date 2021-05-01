@@ -72,20 +72,14 @@ func (g *Game) PrizeDoubled() {
 }
 
 // Joins a player with given identifier if there is a room for him/her.
-func (g *Game) JoinPlayer(identifier string) (chan *model.Message, error) {
+func (g *Game) JoinPlayer(p *Player) (chan *model.Message, error) {
 	if len(g.Players) >= internal.PlayerLimit {
 		return nil, UserLimitReachedError
 	}
 
 	g.Mu.Lock()
 
-	p := &Player{
-		Identifier:    identifier,
-		ClaimedNumber: random_generator.GenerateRandomNumber(),
-		MessageChan:   make(chan *model.Message),
-	}
-
-	g.Players[identifier] = p
+	g.Players[p.Identifier] = p
 	g.Mu.Unlock()
 
 	return p.MessageChan, nil
@@ -155,8 +149,15 @@ func (g *Game) PublishToLosers() {
 	panic("implement me")
 }
 
+// Closes all player channels.
 func (g *Game) CloseAllChannels() {
 	for _, p := range g.Players {
-		close(p.MessageChan)
+		go func(player *Player) {
+			defer func() {
+				recover()
+			}()
+
+			close(player.MessageChan)
+		}(p)
 	}
 }
