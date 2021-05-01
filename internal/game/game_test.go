@@ -163,6 +163,8 @@ func TestGame_WinningPlayer(t *testing.T) {
 
 func TestGame_CloseAllChannels(t *testing.T) {
 	t.Run("it should close all channels gracefully", func(a *testing.T) {
+		a.Parallel()
+
 		g := NewGame()
 
 		for x := 1; x <= 10; x++ {
@@ -173,10 +175,26 @@ func TestGame_CloseAllChannels(t *testing.T) {
 			}
 		}
 
-		a.Parallel()
+		g.CloseAllChannels()
 	})
 
 	t.Run("it should close channels even some of them closed", func(a *testing.T) {
 		a.Parallel()
+
+		g := NewGame()
+
+		for x := 1; x <= 10; x++ {
+			p := NewPlayer("ABCD")
+
+			if x%2 == 0 {
+				close(p.MessageChan)
+			}
+
+			if _, err := g.JoinPlayer(p); err != nil {
+				a.Errorf("unexpected to get an error while joining player, error=%s", err)
+			}
+		}
+
+		g.CloseAllChannels()
 	})
 }
