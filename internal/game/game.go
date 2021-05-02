@@ -1,12 +1,10 @@
 package game
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/yigitsadic/minigame/internal"
 	"github.com/yigitsadic/minigame/internal/random_generator"
-	"os"
 	"sync"
 	"time"
 )
@@ -22,6 +20,7 @@ type Game struct {
 	Players      map[string]*Player
 	WinnerNumber int
 
+	Done   chan bool
 	Winner chan *Player
 	Events chan *Event
 
@@ -43,8 +42,9 @@ func NewGame() *Game {
 		Players:   make(map[string]*Player),
 		Events:    make(chan *Event),
 
-		WinnerNumber: random_generator.GenerateRandomNumber(),
+		Done:         make(chan bool, 1),
 		Winner:       make(chan *Player, 1),
+		WinnerNumber: random_generator.GenerateRandomNumber(),
 
 		CurrentPrize: internal.StartingPrize,
 
@@ -95,12 +95,41 @@ func (g *Game) JoinPlayer(p *Player) error {
 // TODO: Refactor!
 // Handles game. Waits for game finished or winner found signal.
 func (g *Game) HandleGame() {
+
 	for {
+		if g.CurrentStep >= internal.TryCount {
+			g.Done <- true
+		}
+
 		select {
+		case <-g.Done:
+			for _, p := range g.Players {
+				evt := &Event{
+					EType:   EventGameStopped,
+					Player:  p,
+					Payload: nil,
+				}
+
+				p.Conn.WriteJSON(evt)
+			}
+
+			return
 		case <-g.TickerChan:
+			g.CurrentStep++
+
+			go g.HandleWinner()
 			go g.PrizeDoubled()
 		case winner := <-g.Winner:
-			json.NewEncoder(os.Stdout).Encode(winner)
+			evt := &Event{
+				EType:  EventWinnerFound,
+				Player: winner,
+				Payload: &WinnerFoundPayload{
+					ClaimedPrize: g.CurrentPrize,
+				},
+			}
+
+			g.Events <- evt
+			g.Done <- true
 		case evt := <-g.Events:
 			if evt.Player != nil {
 				evt.Player.Conn.WriteJSON(evt)
@@ -131,6 +160,9 @@ func (g *Game) HandleWinner() {
 	if winner == nil {
 		return
 	}
+
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
 
 	go func() {
 		g.Winner <- winner

@@ -5,6 +5,7 @@ import (
 	"github.com/yigitsadic/minigame/internal/game"
 	"log"
 	"net/http"
+	"sync"
 )
 
 var (
@@ -15,7 +16,9 @@ var (
 			return r.Host == "localhost:9090"
 		},
 	}
-	g *game.Game
+
+	g        *game.Game
+	gameOnce sync.Once
 )
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -30,11 +33,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	p := game.NewPlayer(conn.RemoteAddr().String(), conn)
 
 	go g.JoinPlayer(p)
-	go g.HandleGame()
 }
 
 func main() {
-	g = game.NewGame()
+	gameOnce.Do(func() {
+		g = game.NewGame()
+		go g.HandleGame()
+	})
 
 	http.HandleFunc("/ws", serveWs)
 
