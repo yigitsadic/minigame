@@ -1,10 +1,13 @@
 package game
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/yigitsadic/minigame/internal"
 	"github.com/yigitsadic/minigame/internal/random_generator"
+	"os"
 	"sync"
 	"time"
 )
@@ -48,7 +51,8 @@ func NewGame() *Game {
 
 		LastWinnerCheck: time.Now(),
 		NextWinnerCheck: time.Now().Add(time.Minute * internal.TryMinute),
-		TickerChan:      time.Tick(time.Minute * internal.TryMinute),
+		// TickerChan:      time.Tick(time.Minute * internal.TryMinute),
+		TickerChan: time.Tick(time.Second * 10),
 	}
 }
 
@@ -90,7 +94,22 @@ func (g *Game) JoinPlayer(p *Player) error {
 // TODO: Refactor!
 // Handles game. Waits for game finished or winner found signal.
 func (g *Game) HandleGame() {
-	panic("implement me!")
+	for {
+		select {
+		case <-g.TickerChan:
+			fmt.Println("New tick tok")
+		case winner := <-g.Winner:
+			json.NewEncoder(os.Stdout).Encode(winner)
+		case evt := <-g.Events:
+			if evt.Player != nil {
+				evt.Player.Conn.WriteJSON(evt)
+			} else {
+				for _, p := range g.Players {
+					p.Conn.WriteJSON(evt)
+				}
+			}
+		}
+	}
 }
 
 // Returns winning player if exists.

@@ -6,9 +6,9 @@ import (
 )
 
 type Player struct {
-	Identifier    string
-	ClaimedNumber int
-	Conn          *websocket.Conn
+	Identifier    string          `json:"identifier"`
+	ClaimedNumber int             `json:"claimed_number"`
+	Conn          *websocket.Conn `json:"-"`
 }
 
 func NewPlayer(identifier string, con *websocket.Conn) *Player {

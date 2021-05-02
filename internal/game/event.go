@@ -10,20 +10,20 @@ const (
 )
 
 type Event struct {
-	EType   EventType
-	Player  *Player
-	Payload interface{}
+	EType   EventType   `json:"event_type"`
+	Player  *Player     `json:"player"`
+	Payload interface{} `json:"payload"`
 }
 
 type PrizeDoubledPayload struct {
-	NewPrize int
+	NewPrize int `json:"new_prize"`
 }
 
 type PlayerJoinedPayload struct {
-	ClaimedNumber int
-	CurrentPrize  int
+	ClaimedNumber int `json:"claimed_number"`
+	CurrentPrize  int `json:"current_prize"`
 }
 
 type WinnerFoundPayload struct {
-	ClaimedPrize int
+	ClaimedPrize int `json:"claimed_prize"`
 }
