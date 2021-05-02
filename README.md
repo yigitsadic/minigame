@@ -9,3 +9,4 @@ React client: https://github.com/yigitsadic/minigame-react
 - [ ] Control uniqueness of claimed number.
 - [ ] Send current game information (last tick, next tick) as event.
 - [ ] Restart game every 15 minutes maybe.
+- [ ] Main game handler tests.
