@@ -36,6 +36,10 @@ func TestGame_PrizeDoubled(t *testing.T) {
 		if evt.Player != nil {
 			c.Errorf("unexpected to see a player.")
 		}
+
+		if g.CurrentPrize != expectedPrize {
+			c.Errorf("expected to double prize")
+		}
 	})
 }
 

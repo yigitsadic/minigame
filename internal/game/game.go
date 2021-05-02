@@ -3,7 +3,6 @@ package game
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/yigitsadic/minigame/internal"
 	"github.com/yigitsadic/minigame/internal/random_generator"
@@ -58,9 +57,11 @@ func NewGame() *Game {
 
 // Sends an event to inform that prize is doubled.
 func (g *Game) PrizeDoubled() {
+	g.CurrentPrize *= 2
+
 	event := &Event{
 		EType:   EventPrizeDoubled,
-		Payload: &PrizeDoubledPayload{NewPrize: g.CurrentPrize * 2},
+		Payload: &PrizeDoubledPayload{NewPrize: g.CurrentPrize},
 	}
 
 	g.Events <- event
@@ -97,7 +98,7 @@ func (g *Game) HandleGame() {
 	for {
 		select {
 		case <-g.TickerChan:
-			fmt.Println("New tick tok")
+			go g.PrizeDoubled()
 		case winner := <-g.Winner:
 			json.NewEncoder(os.Stdout).Encode(winner)
 		case evt := <-g.Events:
