@@ -2,12 +2,9 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/yigitsadic/minigame/internal"
-	"github.com/yigitsadic/minigame/internal/model"
 	"github.com/yigitsadic/minigame/internal/random_generator"
-	"log"
 	"sync"
 	"time"
 )
@@ -28,7 +25,9 @@ type Game struct {
 
 	Players      map[string]*Player
 	WinnerNumber int
-	Winner       *Player
+
+	Winner chan *Player
+	Events chan *Event
 
 	CurrentStep  int
 	CurrentPrize int
@@ -43,10 +42,13 @@ type Game struct {
 // Initializes a new game with default options.
 func NewGame() *Game {
 	return &Game{
-		Id:           uuid.NewString(),
-		CreatedAt:    time.Now(),
-		Players:      make(map[string]*Player),
+		Id:        uuid.NewString(),
+		CreatedAt: time.Now(),
+		Players:   make(map[string]*Player),
+		Events:    make(chan *Event),
+
 		WinnerNumber: random_generator.GenerateRandomNumber(),
+		Winner:       make(chan *Player, 1),
 
 		CurrentPrize: internal.StartingPrize,
 
@@ -56,77 +58,44 @@ func NewGame() *Game {
 	}
 }
 
-// Sends a message to all participants that prize is doubled.
+// Sends an event to inform that prize is doubled.
 func (g *Game) PrizeDoubled() {
-	for _, player := range g.Players {
-		go func(p *Player) {
-			defer func() {
-				recover()
-			}()
-
-			p.MessageChan <- &model.Message{
-				ID:          uuid.NewString(),
-				Text:        PrizeDoubledMessage,
-				MessageType: model.MessageTypeDoublePrize,
-			}
-		}(player)
+	event := &Event{
+		EType:   EventPrizeDoubled,
+		Payload: &PrizeDoubledPayload{NewPrize: g.CurrentPrize * 2},
 	}
+
+	g.Events <- event
 }
 
 // Joins a player with given identifier if there is a room for him/her.
-func (g *Game) JoinPlayer(p *Player) (chan *model.Message, error) {
+func (g *Game) JoinPlayer(p *Player) error {
 	if len(g.Players) >= internal.PlayerLimit {
-		return nil, UserLimitReachedError
+		return UserLimitReachedError
+	}
+
+	evt := &Event{
+		EType:  EventPlayerJoined,
+		Player: p,
+		Payload: &PlayerJoinedPayload{
+			ClaimedNumber: p.ClaimedNumber,
+			CurrentPrize:  g.CurrentPrize,
+		},
 	}
 
 	g.Mu.Lock()
 
 	g.Players[p.Identifier] = p
+	g.Events <- evt
+
 	g.Mu.Unlock()
 
-	return p.MessageChan, nil
+	return nil
 }
 
-func (g *Game) PublishClaimedNumber(identifier string) error {
-	p, ok := g.Players[identifier]
-
-	if ok {
-		p.MessageChan <- &model.Message{
-			ID:            uuid.NewString(),
-			Text:          fmt.Sprintf("Your number is %d. You will notified if you win.", p.ClaimedNumber),
-			MessageType:   model.MessageTypeInitial,
-			ClaimedNumber: &p.ClaimedNumber,
-		}
-
-		return nil
-	} else {
-		return InvalidPlayerIdentifierError
-	}
-}
-
+// TODO: Refactor!
 func (g *Game) HandleGameTicker() {
-	for t := range g.TickerChan {
-		if g.CurrentStep >= internal.TryCount {
-			log.Println("Game stopped.")
-			break
-		}
-
-		g.CurrentStep++
-
-		g.Mu.Lock()
-
-		if p := g.WinningPlayer(); p != nil {
-			log.Println("Winner found")
-		}
-
-		g.LastWinnerCheck = t
-		g.NextWinnerCheck = t.Add(time.Minute * internal.TryMinute)
-		g.CurrentPrize *= 2
-
-		g.Mu.Unlock()
-
-		g.PrizeDoubled()
-	}
+	panic("implement me!")
 }
 
 // Returns winning player if exists.
@@ -143,41 +112,34 @@ func (g *Game) WinningPlayer() *Player {
 	return nil
 }
 
+// TODO: Refactor!
 // Publishes you win message to winner reading Game.Winner.
 func (g *Game) PublishToWinner() {
-	if g.Winner == nil {
-		return
-	}
+	/*
+		if g.Winner == nil {
+			return
+		}
 
-	message := &model.Message{
-		ID:          uuid.NewString(),
-		Text:        YouWinMessage,
-		MessageType: model.MessageTypeYouWin,
-		PrizeWon:    &g.CurrentPrize,
-	}
+		message := &model.Message{
+			ID:          uuid.NewString(),
+			Text:        YouWinMessage,
+			MessageType: model.MessageTypeYouWin,
+			PrizeWon:    &g.CurrentPrize,
+		}
 
-	go func(m *model.Message) {
-		defer func() {
-			recover()
-		}()
-
-		g.Winner.MessageChan <- m
-	}(message)
-}
-
-func (g *Game) PublishToLosers() {
-	panic("implement me")
-}
-
-// Closes all player channels.
-func (g *Game) CloseAllChannels() {
-	for _, p := range g.Players {
-		go func(player *Player) {
+		go func(m *model.Message) {
 			defer func() {
 				recover()
 			}()
 
-			close(player.MessageChan)
-		}(p)
-	}
+			w := <-g.Winner
+			w.MessageChan <- m
+		}(message)
+
+	*/
+}
+
+// TODO: Refactor!
+func (g *Game) PublishToLosers() {
+	panic("implement me")
 }

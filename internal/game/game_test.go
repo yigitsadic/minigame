@@ -3,83 +3,38 @@ package game
 import (
 	"fmt"
 	"github.com/yigitsadic/minigame/internal"
-	"github.com/yigitsadic/minigame/internal/model"
-	"reflect"
 	"testing"
 )
 
 func TestGame_PrizeDoubled(t *testing.T) {
-	t.Run("it should publish prize doubled message gracefully", func(c *testing.T) {
+	t.Run("it should publish prize doubled event gracefully", func(c *testing.T) {
 		c.Parallel()
 
-		p1 := NewPlayer("ABCD1")
-		p2 := NewPlayer("ABCD2")
-
-		// Use buffered channel.
-		p1C := make(chan *model.Message, 1)
-		p2C := make(chan *model.Message, 1)
-
-		p1.MessageChan = p1C
-		p2.MessageChan = p2C
+		startingPrize := 20
+		expectedPrize := startingPrize * 2
 
 		g := NewGame()
-
-		g.Players[p1.Identifier] = p1
-		g.Players[p2.Identifier] = p2
-
-		var a *model.Message
-		var b *model.Message
+		g.CurrentPrize = startingPrize
+		g.Events = make(chan *Event, 1)
 
 		g.PrizeDoubled()
 
-		a = <-p1.MessageChan
-		b = <-p2.MessageChan
+		evt := <-g.Events
 
-		if a == nil {
-			c.Errorf("expected to get a message from p1 message channel")
+		if evt.EType != EventPrizeDoubled {
+			c.Errorf("expected event type was=%d but got=%d", EventPrizeDoubled, evt.EType)
 		}
 
-		if b == nil {
-			c.Errorf("expected to get a message from p2 message channel")
+		if p, ok := evt.Payload.(*PrizeDoubledPayload); ok {
+			if p.NewPrize != expectedPrize {
+				c.Errorf("prize not doubled. expected=%d but got=%d", expectedPrize, p.NewPrize)
+			}
+		} else {
+			c.Errorf("expected payload not satisfied. payload=%v", evt.Payload)
 		}
 
-		if a != nil && a.Text != PrizeDoubledMessage {
-			c.Errorf("expected message was %q got=%q", PrizeDoubledMessage, a.Text)
-		}
-
-		if b != nil && b.Text != PrizeDoubledMessage {
-			c.Errorf("expected message was %q got=%q", PrizeDoubledMessage, b.Text)
-		}
-	})
-
-	t.Run("it should handle closed channel gracefully", func(c *testing.T) {
-		c.Parallel()
-
-		g := NewGame()
-
-		p := NewPlayer("ABC")
-		p2 := NewPlayer("DEF")
-
-		closedChan, err := g.JoinPlayer(p)
-		if err != nil {
-			c.Errorf("unexpected to get an error %s", err)
-		}
-
-		// buffered chan
-		p2.MessageChan = make(chan *model.Message, 1)
-		openChan, err := g.JoinPlayer(p2)
-		if err != nil {
-			c.Errorf("unexpected to get an error %s", err)
-		}
-
-		close(closedChan)
-
-		g.PrizeDoubled()
-
-		msg := <-openChan
-
-		if msg.Text != PrizeDoubledMessage {
-			c.Errorf("expected chan message was=%s, but got=%s", PrizeDoubledMessage, msg.Text)
+		if evt.Player != nil {
+			c.Errorf("unexpected to see a player.")
 		}
 	})
 }
@@ -89,7 +44,7 @@ func TestGame_JoinPlayer(t *testing.T) {
 		g := NewGame()
 
 		for x := 1; x <= internal.PlayerLimit; x++ {
-			p := NewPlayer(fmt.Sprintf("Player %d", x))
+			p := NewPlayer(fmt.Sprintf("Player %d", x), nil)
 			g.Players[p.Identifier] = p
 		}
 
@@ -97,7 +52,7 @@ func TestGame_JoinPlayer(t *testing.T) {
 			a.Errorf("expected player count was %d, but got=%d", internal.PlayerLimit, len(g.Players))
 		}
 
-		_, err := g.JoinPlayer(NewPlayer("Unlucky Player"))
+		err := g.JoinPlayer(NewPlayer("Unlucky Player", nil))
 		if err == nil {
 			a.Errorf("expected to get an error, but got nothing")
 		}
@@ -113,14 +68,35 @@ func TestGame_JoinPlayer(t *testing.T) {
 		a.Parallel()
 
 		g := NewGame()
+		g.Events = make(chan *Event, 1)
 
-		got, err := g.JoinPlayer(NewPlayer("Lucky Player"))
+		p := NewPlayer("Lucky Player", nil)
+
+		err := g.JoinPlayer(p)
 		if err != nil {
 			a.Errorf("unexpected to get an error but got=%s", err)
 		}
 
-		if reflect.TypeOf(got).String() != "chan *model.Message" {
-			a.Errorf("unexpected return type. expected to get %s", reflect.TypeOf(got))
+		evt := <-g.Events
+
+		if evt.EType != EventPlayerJoined {
+			a.Errorf("expected event type was=%d but got=%d", EventPlayerJoined, evt.EType)
+		}
+
+		if evt.Player.Identifier != p.Identifier {
+			a.Errorf("expected to contain player information")
+		}
+
+		if p, ok := evt.Payload.(*PlayerJoinedPayload); ok {
+			if p.ClaimedNumber != p.ClaimedNumber {
+				a.Errorf("expected to contain claimed number in payload")
+			}
+
+			if p.CurrentPrize != g.CurrentPrize {
+				a.Errorf("expected to contain current prize in payload")
+			}
+		} else {
+			a.Errorf("expected payload not satisfied.")
 		}
 	})
 }
@@ -131,7 +107,7 @@ func TestGame_WinningPlayer(t *testing.T) {
 
 		g := NewGame()
 
-		p := NewPlayer("ABC")
+		p := NewPlayer("ABC", nil)
 		g.Players[p.Identifier] = p
 
 		p.ClaimedNumber = g.WinnerNumber
@@ -148,7 +124,7 @@ func TestGame_WinningPlayer(t *testing.T) {
 
 		g := NewGame()
 
-		p := NewPlayer("ABC")
+		p := NewPlayer("ABC", nil)
 		g.Players[p.Identifier] = p
 
 		p.ClaimedNumber = g.WinnerNumber + 1
@@ -158,102 +134,5 @@ func TestGame_WinningPlayer(t *testing.T) {
 		if got != nil {
 			a.Errorf("expected no winner but got=%v", got)
 		}
-	})
-}
-
-func TestGame_CloseAllChannels(t *testing.T) {
-	t.Run("it should close all channels gracefully", func(a *testing.T) {
-		a.Parallel()
-
-		g := NewGame()
-
-		for x := 1; x <= 10; x++ {
-			p := NewPlayer("ABCD")
-
-			if _, err := g.JoinPlayer(p); err != nil {
-				a.Errorf("unexpected to get an error while joining player, error=%s", err)
-			}
-		}
-
-		g.CloseAllChannels()
-	})
-
-	t.Run("it should close channels even some of them closed", func(a *testing.T) {
-		a.Parallel()
-
-		g := NewGame()
-
-		for x := 1; x <= 10; x++ {
-			p := NewPlayer("ABCD")
-
-			if x%2 == 0 {
-				close(p.MessageChan)
-			}
-
-			if _, err := g.JoinPlayer(p); err != nil {
-				a.Errorf("unexpected to get an error while joining player, error=%s", err)
-			}
-		}
-
-		g.CloseAllChannels()
-	})
-}
-
-func TestGame_PublishToWinner(t *testing.T) {
-	t.Run("it should publish message to winner", func(a *testing.T) {
-		a.Parallel()
-
-		prize := 50
-
-		g := NewGame()
-		g.CurrentPrize = prize
-
-		p := NewPlayer("ABC")
-		g.Winner = p
-
-		// buffered channel override
-		c := make(chan *model.Message, 1)
-		p.MessageChan = c
-
-		g.PublishToWinner()
-
-		got := <-c
-
-		// Message type should match.
-		if got.MessageType != model.MessageTypeYouWin {
-			a.Errorf("expected to get you win message but got %s", got.MessageType)
-		}
-
-		// Message content should match.
-		if got.Text != YouWinMessage {
-			a.Errorf("expected to get you win message but got=%s", got.Text)
-		}
-
-		// Should give correct prize
-		if got.PrizeWon != nil && *got.PrizeWon != prize {
-			a.Errorf("expected prize won was %d but got %d", prize, got.PrizeWon)
-		}
-	})
-
-	t.Run("it should handle if no winner present", func(a *testing.T) {
-		a.Parallel()
-
-		g := NewGame()
-
-		g.PublishToWinner()
-	})
-
-	t.Run("it should handle gracefully if winner's chan closed", func(a *testing.T) {
-		a.Parallel()
-
-		g := NewGame()
-
-		p := NewPlayer("AC/DC")
-
-		g.Winner = p
-
-		close(p.MessageChan)
-
-		g.PublishToWinner()
 	})
 }
