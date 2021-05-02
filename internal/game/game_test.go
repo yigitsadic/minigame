@@ -136,3 +136,51 @@ func TestGame_WinningPlayer(t *testing.T) {
 		}
 	})
 }
+
+func TestGame_HandleWinner(t *testing.T) {
+	t.Run("it should send event if winner found", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+		g.Winner = make(chan *Player, 1)
+		g.Events = make(chan *Event, 1)
+
+		p := NewPlayer("ABC", nil)
+
+		p.ClaimedNumber = g.WinnerNumber
+
+		g.Players[p.Identifier] = p
+
+		g.HandleWinner()
+
+		evt := <-g.Events
+		winner := <-g.Winner
+
+		if evt.EType != EventWinnerFound {
+			a.Errorf("expected to get winner found event type")
+		}
+
+		if evt.Player.Identifier != p.Identifier {
+			a.Errorf("expected to see correct winner")
+		}
+
+		if payload, ok := evt.Payload.(*WinnerFoundPayload); ok {
+			if payload.ClaimedPrize != g.CurrentPrize {
+				a.Errorf("expected prize not satisfied")
+			}
+		} else {
+			a.Errorf("expected payload not satisfied")
+		}
+
+		if winner.Identifier != p.Identifier {
+			a.Errorf("expected to see correct player as winner")
+		}
+	})
+
+	t.Run("it should handle gracefully if no winner found", func(a *testing.T) {
+		a.Parallel()
+
+		g := NewGame()
+		g.HandleWinner()
+	})
+}

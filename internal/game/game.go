@@ -10,13 +10,7 @@ import (
 )
 
 var (
-	UserLimitReachedError        = errors.New("maximum user limit reached")
-	InvalidPlayerIdentifierError = errors.New("invalid player identifier")
-)
-
-const (
-	PrizeDoubledMessage = "Prize is doubled. Wish you luck."
-	YouWinMessage       = "You have won this game. You are a lucky guy/girl!"
+	UserLimitReachedError = errors.New("maximum user limit reached")
 )
 
 type Game struct {
@@ -94,15 +88,13 @@ func (g *Game) JoinPlayer(p *Player) error {
 }
 
 // TODO: Refactor!
-func (g *Game) HandleGameTicker() {
+// Handles game. Waits for game finished or winner found signal.
+func (g *Game) HandleGame() {
 	panic("implement me!")
 }
 
 // Returns winning player if exists.
 func (g *Game) WinningPlayer() *Player {
-	g.Mu.Lock()
-	defer g.Mu.Unlock()
-
 	for _, p := range g.Players {
 		if g.WinnerNumber == p.ClaimedNumber {
 			return p
@@ -112,34 +104,25 @@ func (g *Game) WinningPlayer() *Player {
 	return nil
 }
 
-// TODO: Refactor!
-// Publishes you win message to winner reading Game.Winner.
-func (g *Game) PublishToWinner() {
-	/*
-		if g.Winner == nil {
-			return
+// If winner found, publishes event.
+func (g *Game) HandleWinner() {
+	winner := g.WinningPlayer()
+
+	if winner == nil {
+		return
+	}
+
+	go func() {
+		g.Winner <- winner
+	}()
+
+	go func() {
+		evt := &Event{
+			EType:   EventWinnerFound,
+			Player:  winner,
+			Payload: &WinnerFoundPayload{ClaimedPrize: g.CurrentPrize},
 		}
 
-		message := &model.Message{
-			ID:          uuid.NewString(),
-			Text:        YouWinMessage,
-			MessageType: model.MessageTypeYouWin,
-			PrizeWon:    &g.CurrentPrize,
-		}
-
-		go func(m *model.Message) {
-			defer func() {
-				recover()
-			}()
-
-			w := <-g.Winner
-			w.MessageChan <- m
-		}(message)
-
-	*/
-}
-
-// TODO: Refactor!
-func (g *Game) PublishToLosers() {
-	panic("implement me")
+		g.Events <- evt
+	}()
 }

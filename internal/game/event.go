@@ -23,3 +23,7 @@ type PlayerJoinedPayload struct {
 	ClaimedNumber int
 	CurrentPrize  int
 }
+
+type WinnerFoundPayload struct {
+	ClaimedPrize int
+}
