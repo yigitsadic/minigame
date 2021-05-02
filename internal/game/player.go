@@ -1,20 +1,20 @@
 package game
 
 import (
-	"github.com/yigitsadic/minigame/internal/model"
+	"github.com/gorilla/websocket"
 	"github.com/yigitsadic/minigame/internal/random_generator"
 )
 
 type Player struct {
 	Identifier    string
 	ClaimedNumber int
-	MessageChan   chan *model.Message
+	Conn          *websocket.Conn
 }
 
-func NewPlayer(identifier string) *Player {
+func NewPlayer(identifier string, con *websocket.Conn) *Player {
 	return &Player{
 		Identifier:    identifier,
 		ClaimedNumber: random_generator.GenerateRandomNumber(),
-		MessageChan:   make(chan *model.Message),
+		Conn:          con,
 	}
 }

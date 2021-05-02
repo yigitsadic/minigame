@@ -5,7 +5,7 @@ import (
 )
 
 func TestNewPlayer(t *testing.T) {
-	got := NewPlayer("ABCDE")
+	got := NewPlayer("ABCDE", nil)
 
 	if got.Identifier != "ABCDE" {
 		t.Errorf("expected to initialize as expected. identifier expected=%s got=%s", "ABCDE", got.Identifier)
